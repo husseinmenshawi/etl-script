@@ -1,0 +1,24 @@
+{
+  "name": "etl-script",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/husseinmenshawi/etl-script.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/husseinmenshawi/etl-script/issues"
+  },
+  "homepage": "https://github.com/husseinmenshawi/etl-script#readme",
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "exceljs": "^4.3.0",
+    "mongoose": "^7.2.0"
+  }
+}
