@@ -1,6 +1,14 @@
+// Libraries
 require("dotenv").config();
+const Excel = require("exceljs");
+
+// Database
 const db = require("./config").database;
+
+// Models
 const qnaModel = require("./models/qna");
+
+// Constants
 const CONSTANTS = {
   DATE: "date",
   VERSION: "version",
@@ -15,18 +23,20 @@ async function main() {
 
   await db.connect();
 
-  console.log("begin transferring data");
-  const existingDataWithCurrentDateAndVersion = await qnaModel.findOne({
-    fileName,
-  });
+  const existingDataWithCurrentDateAndVersion = await qnaModel
+    .findOne({
+      version,
+      date,
+    })
+    .lean();
 
   if (existingDataWithCurrentDateAndVersion) {
     console.log(
-      `Existing data with following date (${date}) and version ${version} found. Aborting operation.`
+      `Existing data with following date (${date}) and version (${version}) found. Aborting operation.`
     );
   }
 
-  return;
+  return _readAndTransferData(fileName, version, date);
 }
 
 function _getArguments() {
@@ -61,6 +71,49 @@ function _getArguments() {
   };
 }
 
+async function _readAndTransferData(fileName, version, date) {
+  const workbook = new Excel.Workbook();
+  try {
+    const absolutePath = __dirname + "/files/" + fileName;
+    await workbook.xlsx.readFile(absolutePath);
+  } catch {
+    throw `File not found (${fileName})`;
+  }
+
+  try {
+    const worksheets = [];
+    workbook.eachSheet(function (worksheet, sheetId) {
+      worksheets.push(worksheet);
+    });
+    const mainSheet = worksheets[0];
+    const columnsArray = mainSheet.getRow(1).values;
+    const dataToBeInserted = [];
+
+    mainSheet.eachRow({ includeEmpty: true }, function (row, rowNumber) {
+      if (rowNumber == 1) return;
+      const columnObject = {
+        version,
+        date,
+        data: {},
+      };
+
+      row.eachCell({ includeEmpty: true }, function (cell, colNumber) {
+        const formattedColumnName = convertStringToSnakeCase(columnsArray[colNumber])
+        columnObject.data[formattedColumnName] = cell.value;
+      });
+
+      dataToBeInserted.push(columnObject);
+    });
+    await qnaModel.insertMany(dataToBeInserted);
+  } catch (error) {
+    throw `Excel File Error: ${error}`;
+  }
+}
+
+function convertStringToSnakeCase(string) {
+  return String(string).trim().split(" ").join("_").toLowerCase();
+}
+
 main()
   .then(() => {
     console.log("Operation completed successfully");
@@ -69,4 +122,6 @@ main()
   })
   .catch((error) => {
     console.error("An error has occured: ", error);
+    console.timeEnd(CONSTANTS.JOB_NAME);
+    process.exit();
   });
