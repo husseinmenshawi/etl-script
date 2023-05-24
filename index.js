@@ -34,9 +34,9 @@ async function main() {
     console.log(
       `Existing data with following date (${date}) and version (${version}) found. Aborting operation.`
     );
+  } else {
+    await _readAndTransferData(fileName, version, date);
   }
-
-  return _readAndTransferData(fileName, version, date);
 }
 
 function _getArguments() {
@@ -86,6 +86,10 @@ async function _readAndTransferData(fileName, version, date) {
       worksheets.push(worksheet);
     });
     const mainSheet = worksheets[0];
+    const imagesObject = _generateImageObject(
+      mainSheet.getImages(),
+      workbook
+    );
     const columnsArray = mainSheet.getRow(1).values;
     const dataToBeInserted = [];
 
@@ -98,8 +102,14 @@ async function _readAndTransferData(fileName, version, date) {
       };
 
       row.eachCell({ includeEmpty: true }, function (cell, colNumber) {
-        const formattedColumnName = convertStringToSnakeCase(columnsArray[colNumber])
-        columnObject.data[formattedColumnName] = cell.value;
+        let value = cell.value;
+        if (imagesObject[`${rowNumber}_${colNumber}`]) {
+          value = imagesObject[`${rowNumber}_${colNumber}`];
+        }
+        const formattedColumnName = convertStringToSnakeCase(
+          columnsArray[colNumber]
+        );
+        columnObject.data[formattedColumnName] = value;
       });
 
       dataToBeInserted.push(columnObject);
@@ -112,6 +122,28 @@ async function _readAndTransferData(fileName, version, date) {
 
 function convertStringToSnakeCase(string) {
   return String(string).trim().split(" ").join("_").toLowerCase();
+}
+
+function _generateImageObject(images, workbook) {
+  const object = {};
+  images.forEach((image) => {
+    const {
+      range: {
+        tl: { nativeCol, nativeRow },
+      },
+      imageId,
+    } = image;
+    const { name, extension, buffer } = workbook.model.media.find(
+      (m) => m.index === imageId
+    );
+    object[`${nativeRow}_${nativeCol}`] = {
+      name,
+      extension,
+      buffer,
+    };
+  });
+
+  return object;
 }
 
 main()

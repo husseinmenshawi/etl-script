@@ -17,6 +17,7 @@
 ## Project Start Up
 
 1. Ensure target excel file is in the project directory in the `./files` folder with the following naming convention `YYYY-MM-DD_v<VERSION>.xlsx`. Example: `2023-04-02_v2.xlsx`
-1. Run the following command `npm run start -- date=<DATE> version=<VERSION>`
+1. Run the following command `npm run start -- date=<DATE> version=<VERSION>`.
+Example: `npm run start -- date=2023-04-02 version=2`
 
 Do note that passing a different date and version could create duplicate values in the database.
