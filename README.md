@@ -12,6 +12,7 @@
 1. Copy the content of the file
 1. Create a new file called `.env`
 1. Paste the content in the new file
+1. All variables with `<getFromPersonInCharge>` needs to be updated with actual values.
 1. Run the following command `npm install`
 
 ## Project Start Up
